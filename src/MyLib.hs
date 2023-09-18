@@ -72,6 +72,12 @@ firstRepeat = g 0 []
     g _ _ [] = Nothing
     g i s (x : xs) = if x `elem` s then Just (i, x) else g (i + 1) (x : s) xs
 
+firstRepeatBy :: (a -> a -> Bool) -> [a] -> Maybe (Int, a)
+firstRepeatBy f = g 0 []
+  where
+    g _ _ [] = Nothing
+    g i s (x : xs) = if any (f x) s then Just (i, x) else g (i + 1) (x : s) xs
+
 signedInteger :: Parser Int
 signedInteger = signed space decimal
 
