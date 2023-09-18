@@ -11,11 +11,11 @@ import Control.Monad (guard, mplus)
 import Data.Bits (xor)
 import Data.Char (digitToInt, intToDigit, ord, isHexDigit)
 import Data.Foldable (Foldable (foldr'), toList)
-import Data.List (delete, foldl', group, nub, tails)
+import Data.List (delete, foldl', group, nub, tails, uncons)
 import Data.List.Split (chunksOf)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.Maybe (fromMaybe, maybeToList)
+import Data.Maybe (fromMaybe, maybeToList, mapMaybe)
 import Data.Proxy (Proxy (..))
 import qualified Data.Sequence as S
 import Data.Void (Void)
@@ -333,3 +333,11 @@ vZipWith f (Cons x xs) (Cons y ys) = Cons (f x y) $ vZipWith f xs ys
 
 vTail :: Vec (S n) a -> Vec n a
 vTail (Cons _ xs) = xs
+
+pick :: Int -> [a] -> [[a]]
+pick n l
+  | n <= 0 = pure []
+  | otherwise = do
+    (x, xs) <- mapMaybe uncons $ tails l
+    (x :) <$> pick (n - 1) xs
+
