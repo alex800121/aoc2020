@@ -9,13 +9,15 @@ module MyLib where
 
 import Control.Monad (guard, mplus)
 import Data.Bits (xor)
-import Data.Char (digitToInt, intToDigit, ord, isHexDigit)
+import Data.Char (digitToInt, intToDigit, isHexDigit, ord)
 import Data.Foldable (Foldable (foldr'), toList)
 import Data.List (delete, foldl', group, nub, tails, uncons)
 import Data.List.Split (chunksOf)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.Maybe (fromMaybe, maybeToList, mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe, maybeToList)
 import Data.Proxy (Proxy (..))
 import qualified Data.Sequence as S
 import Data.Void (Void)
@@ -72,11 +74,26 @@ firstRepeat = g 0 []
     g _ _ [] = Nothing
     g i s (x : xs) = if x `elem` s then Just (i, x) else g (i + 1) (x : s) xs
 
+firstRepeat' :: (Ord a) => [a] -> Maybe (Int, a)
+firstRepeat' = g 0 Set.empty
+  where
+    g _ _ [] = Nothing
+    g i s (x : xs) = if x `Set.member` s then Just (i, x) else g (i + 1) (Set.insert x s) xs
+
 firstRepeatBy :: (a -> a -> Bool) -> [a] -> Maybe (Int, a)
 firstRepeatBy f = g 0 []
   where
     g _ _ [] = Nothing
     g i s (x : xs) = if any (f x) s then Just (i, x) else g (i + 1) (x : s) xs
+
+stablizedBy :: (a -> a -> Bool) -> [a] -> Maybe (Int, a)
+stablizedBy f = go 0
+  where
+    go i (x : y : xs) = if f x y then Just (i + 1, y) else go (i + 1) (y : xs)
+    go _ _ = Nothing
+
+stablized :: (Eq a) => [a] -> Maybe (Int, a)
+stablized = stablizedBy (==)
 
 signedInteger :: Parser Int
 signedInteger = signed space decimal
@@ -338,6 +355,5 @@ pick :: Int -> [a] -> [[a]]
 pick n l
   | n <= 0 = pure []
   | otherwise = do
-    (x, xs) <- mapMaybe uncons $ tails l
-    (x :) <$> pick (n - 1) xs
-
+      (x, xs) <- mapMaybe uncons $ tails l
+      (x :) <$> pick (n - 1) xs
