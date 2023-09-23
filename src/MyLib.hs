@@ -13,13 +13,13 @@ import Data.Char (digitToInt, intToDigit, isHexDigit, ord)
 import Data.Foldable (Foldable (foldr'), toList)
 import Data.List (delete, foldl', group, nub, tails, uncons)
 import Data.List.Split (chunksOf)
-import Data.Set (Set)
-import qualified Data.Set as Set
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe, mapMaybe, maybeToList)
 import Data.Proxy (Proxy (..))
 import qualified Data.Sequence as S
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Void (Void)
 import Debug.Trace
 import Text.Megaparsec
@@ -357,3 +357,14 @@ pick n l
   | otherwise = do
       (x, xs) <- mapMaybe uncons $ tails l
       (x :) <$> pick (n - 1) xs
+
+extEuc :: (Integral a) => a -> a -> (a, a, a)
+extEuc a b = go a 1 0 b 0 1
+  where
+    go r0 s0 t0 r1 s1 t1
+      | r2 == 0 = (s1, t1, gcd r0 r1)
+      | otherwise = go r1 s1 t1 r2 s2 t2
+      where
+        (q1, r2) = r0 `divMod` r1
+        s2 = s0 - (q1 * s1)
+        t2 = t0 - (q1 * t1)
