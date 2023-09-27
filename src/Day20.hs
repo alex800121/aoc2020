@@ -10,7 +10,7 @@ import Data.Bifunctor (bimap)
 import Data.Char (isNumber)
 import Data.Either (partitionEithers)
 import Data.Function ((&))
-import Data.List (delete, foldl', nub, (\\))
+import Data.List (delete, find, foldl', nub, (\\))
 import Data.List.Split (splitOn)
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -20,8 +20,6 @@ import qualified Data.Set as Set
 import Data.Tuple (swap)
 import Debug.Trace (traceShow)
 import MyLib (Direction (..), drawGraph, drawMap)
-
-type Pic = UArray Index Tile
 
 type PicMap = Map Index Tile
 
@@ -36,6 +34,57 @@ type Index = (Int, Int)
 data Op = Flip | Rotate deriving (Show, Eq, Ord)
 
 data Op' a = Op {flipN :: a, rotateN :: a} deriving (Show, Eq, Ord, Functor)
+
+dragon :: Tile
+dragon = array b $ Map.assocs m
+  where
+    b = (,) <$> minimum <*> maximum $ Map.keys m
+    m =
+      drawMap (\case '#' -> Just True; _ -> Just False)
+        . lines
+        $ "                  # \n#    ##    ##    ###\n #  #  #  #  #  #   "
+
+findDragon :: Tile -> Tile -> [Index]
+findDragon d t =
+  [ (x, y)
+    | let l =
+            [ (a, b)
+              | a <- [dx0 .. dx1],
+                b <- [dy0 .. dy1]
+            ],
+      x <- [tx0 .. tx1 - dx1],
+      y <- [ty0 .. ty1 - dy1],
+      all (\(i, j) -> f (d ! (i, j)) (t ! (i - dx0 + x, j - dy0 + y))) l
+  ]
+  where
+    ((dx0, dy0), (dx1, dy1)) = bounds d
+    ((tx0, ty0), (tx1, ty1)) = bounds t
+    f True a = a
+    f False _ = True
+
+normalize :: Tile -> Tile
+normalize t = ixmap ((0, 0), (x1 - x0, y1 - y0)) (\(x, y) -> (x + x0, y + y0)) t
+  where
+    ((x0, y0), (x1, y1)) = bounds t
+
+stitch :: PicMap -> Tile
+stitch m =
+  normalize $
+    array
+      ((cx + 1 + (ax * w), cy + 1 + (ay * h)), (dx - 1 + (bx * w), dy - 1 + (by * h)))
+      [ ((x + (i * w), y + (j * h)), (m Map.! (i, j)) ! (x, y))
+        | x <- [cx + 1 .. dx - 1],
+          y <- [cy + 1 .. dy - 1],
+          i <- [ax .. bx],
+          j <- [ay .. by]
+      ]
+  where
+    ((ax, ay), (bx, by)) = (,) <$> minimum <*> maximum $ Map.keys m
+    ((cx, cy), (dx, dy)) = bounds $ m Map.! (ax, ay)
+    bax = bx - ax + 1
+    bay = by - ay + 1
+    w = dx - cx - 1
+    h = dy - cy - 1
 
 picMap :: [Tile] -> PicMap
 picMap [] = Map.empty
@@ -185,15 +234,26 @@ day20 = do
           . lines
       )
       . splitOn "\n\n"
+      -- <$> readFile "input/test20.txt"
       <$> readFile "input/input20.txt"
   let x = snd $ input !! 4
       y = flipTile $ rotateTile x
       input' = map snd input
-  -- putStrLn
-  --   . ("day20a: " ++)
-  --   . show
-  --   . product
-  --   . map fst
-  --   $ filter ((== Corner) . (`isTypeIn` input') . snd) input
-  print $ (,) <$> minimum <*> maximum $ Map.keys $ picMap input'
-  -- print $ map (`isTypeIn` input') input'
+  putStrLn
+    . ("day20a: " ++)
+    . show
+    . product
+    . map fst
+    $ filter ((== Corner) . (`isTypeIn` input') . snd) input
+  let bigPicMap = picMap input'
+      bigPic = stitch bigPicMap
+      dragonN = fmap length
+        . find (not . null)
+        . map (findDragon dragon . snd)
+        $ tileVar bigPic
+      dragonL = length $ filter id $ elems dragon
+      bigPicL = length $ filter id $ elems bigPic
+  putStrLn
+    . ("day20b: " ++)
+    . show
+    $ subtract <$> fmap (* dragonL) dragonN <*> pure bigPicL
