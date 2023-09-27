@@ -3,22 +3,24 @@
 
 module Day20 where
 
+import Control.Applicative (liftA, liftA2)
 import Control.Monad (guard)
 import Data.Array.IArray
 import Data.Array.Unboxed
 import Data.Bifunctor (bimap)
 import Data.Char (isNumber)
-import Data.List (foldl', (\\), nub, delete)
+import Data.Function ((&))
+import Data.List (delete, foldl', nub, (\\))
 import Data.List.Split (splitOn)
 import qualified Data.Map as Map
-import Data.Maybe (listToMaybe, isJust, catMaybes, mapMaybe)
+import Data.Maybe (catMaybes, isJust, listToMaybe, mapMaybe)
 import Data.Tuple (swap)
 import Debug.Trace (traceShow)
 import MyLib (Direction (..), drawGraph, drawMap)
-import Control.Applicative (liftA, liftA2)
-import Data.Function ((&))
 
 type Tile = UArray Index Bool
+
+data TileType = Corner | Side | Center deriving (Show, Eq, Ord)
 
 type TileVar = (Op' Int, Tile)
 
@@ -28,12 +30,15 @@ data Op = Flip | Rotate deriving (Show, Eq, Ord)
 
 data Op' a = Op {flipN :: a, rotateN :: a} deriving (Show, Eq, Ord, Functor)
 
-isCornerIn :: Tile -> [Tile] -> Bool
-isCornerIn t ts = length s == 2
+isTypeIn :: Tile -> [Tile] -> TileType
+isTypeIn t ts = case s of
+  2 -> Corner
+  3 -> Side
+  4 -> Center
+  _ -> error "not possible"
   where
     ts' = delete t ts
-    tVar = tileVar t
-    s = catMaybes $ sharedSides <$> tVar <*> ts'
+    s = length $ mapMaybe (sharedSides t) ts'
 
 tileVar :: Tile -> [TileVar]
 tileVar t = matchT
@@ -41,24 +46,43 @@ tileVar t = matchT
     opList = [Op x y | x <- [0, 1], y <- [0 .. 3]]
     matchT = map (\x -> (x, op x t)) opList
 
-sharedSides :: TileVar -> Tile -> Maybe (Op' Int, Direction)
+sharedSides :: Tile -> Tile -> Maybe (Tile, Tile, Index)
 sharedSides ref t = matchSide
   where
+    rVar = tileVar ref
     matchSide = listToMaybe $ do
-      (rDir, rSide) <- sides $ snd ref
+      (rOp, r') <- rVar
+      (rDir, rSide) <- sides r'
       (tDir, tSide) <- sides t
       guard $ rSide == reverse tSide && tDir == succ (succ rDir)
-      return ((fst ref) {rotateN = negate (rotateN $ fst ref) `mod` 4}, rDir)
+      let rIndex = case rDir of
+            North -> (0, -1)
+            East -> (1, 0)
+            South -> (0, 1)
+            West -> (-1, 0)
+      return (ref, reverseOp rOp t, reverseIndex rOp rIndex)
 
-op :: Op' Int -> Tile -> Tile
+reverseIndex :: Op' Int -> Index -> Index
+reverseIndex (Op a b) i =
+  foldl'
+    (\acc x -> x acc)
+    i
+    (replicate (a `mod` 2) flipIndex <> replicate (negate b `mod` 4) rotateIndex )
+  where
+    flipIndex (x, y) = (-x, y)
+    rotateIndex (x, y) = (-y, x)
+
+op, reverseOp :: Op' Int -> Tile -> Tile
 op (Op a b) t =
   foldl'
     (\acc x -> x acc)
     t
     (replicate (b `mod` 4) rotateTile <> replicate (a `mod` 2) flipTile)
-
-reverseOp :: Op' Int -> Op' Int
-reverseOp (Op a b) = Op (a `mod` 2) (negate b `mod` 4)
+reverseOp (Op a b) t =
+  foldl'
+    (\acc x -> x acc)
+    t
+    (replicate (a `mod` 2) flipTile <> replicate (negate b `mod` 4) rotateTile )
 
 sides :: Tile -> [(Direction, [Bool])]
 sides t =
@@ -139,9 +163,11 @@ day20 = do
   let x = snd $ input !! 4
       y = flipTile $ rotateTile x
       input' = map snd input
-  putStrLn 
-    . ("day20a: " ++)
-    . show
-    . product
-    . map fst
-    $ filter ((`isCornerIn` input') . snd) input
+  -- putStrLn
+  --   . ("day20a: " ++)
+  --   . show
+  --   . product
+  --   . map fst
+  --   $ filter ((== Corner) . (`isTypeIn` input') . snd) input
+  putStrLn $ printTile x
+  mapM_ (putStrLn . (\(_, y, z) -> printTile y ++ show z ++ "\n")) $ mapMaybe (sharedSides x) input'
