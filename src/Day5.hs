@@ -8,4 +8,4 @@ day5 = do
       b = maximum seatIDs
       a = minimum seatIDs
   putStrLn $ ("day5a: " ++) $ show $ maximum seatIDs
-  putStrLn $ ("day5a: " ++) $ show $ [a .. b] \\ seatIDs
+  putStrLn $ ("day5b: " ++) $ show $ [a .. b] \\ seatIDs
