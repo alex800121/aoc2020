@@ -1,36 +1,36 @@
 module Day23 where
 
 import Data.Char (digitToInt)
-import Data.Sequence
-import qualified Data.Sequence as Seq
+import qualified Data.Vector.Unboxed.Mutable as M
+import qualified Data.Vector.Unboxed as U
+import Control.Monad.ST (ST, runST)
 
-input :: Seq Int
--- input = Seq.fromList $ map digitToInt "389125467"
-input = Seq.fromList $ map digitToInt "962713854"
+input = "962713854"
+test = "389125467"
 
-step :: Seq Int -> Seq Int
-step (x :<| xs) = (xs10 >< xs0 >< xs11) |> x
+initInput :: String -> Int -> ST s (M.STVector s Int)
+initInput s limit = do
+  l <- M.generate (limit + 1) id
+  f 0 s' l
+  M.write l limit (head s')
+  return l
   where
-    (xs0, xs1) = Seq.splitAt 3 xs
-    f n
-      | n < 1 = f 9
-      | n `elem` xs0 = f (n - 1)
-      | otherwise = n
-    target = f (x - 1)
-    (xs11, xs10) = spanr (/= target) xs1
+  s' = map digitToInt s
+  t = maximum s' + 1
+  -- f :: Int -> [Int] -> ST s (M.MVector s Int) -> ST s () 
+  f i [] l = M.write l i t
+  f i (x : xs) l = M.write l i x >> f x xs l
+
+step :: Int -> M.STVector s Int -> ST s (M.STVector s Int)
+step limit v = do
+  r <- M.read v 0
+  h <- M.read v r
+  x2 <- M.read v h >>= M.read v
+  undefined
 
 day23 :: IO ()
 day23 = do
-  let ans = iterate step input
-      input' = input >< Seq.fromList [10..1000000]
   putStrLn
     . ("day23a: " ++)
     . show
-    $ ans !! 100
-  -- putStrLn
-  --   . ("day23b: " ++)
-  --   . show
-  --   . dropWhileL (/= 1)
-  --   . (!! 10000000)
-  --   $ iterate step input'
-  mapM_ print $ Prelude.take 100 ans
+    $ ""
