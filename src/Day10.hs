@@ -20,4 +20,4 @@ day10 = do
             )
             ((-2, 0), (-1, 0), (0, 1))
   putStrLn $ ("day10a: " ++) $ show day10a
-  putStrLn $ ("day10b: " ++) $ show day10b
+  putStrLn $ ("day10b: " ++) $ show $ fmap snd day10b
