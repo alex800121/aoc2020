@@ -2,6 +2,7 @@ module Day24 where
 
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MS
+import Data.List (foldl')
 
 type Index = (Int, Int)
 
@@ -30,6 +31,7 @@ parseDirection ('n' : 'e' : xs) = NE : parseDirection xs
  ##
 
 -}
+
 readDirection :: Index -> Direction -> Index
 readDirection (x, y) d = case d of
   E -> (x + 1, y)
@@ -40,4 +42,10 @@ readDirection (x, y) d = case d of
   NE -> (x, y - 1)
 
 day24 :: IO ()
-day24 = return ()
+day24 = do
+  input <- lines <$> readFile "input/test24.txt"
+  putStrLn
+    . show
+    . MS.fromList
+    . map (foldl' readDirection (0, 0) . parseDirection)
+    $ input
