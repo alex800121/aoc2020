@@ -1,20 +1,31 @@
 module Day19 where
 
+import Control.Applicative ((<|>))
 import Control.Monad (void)
+import Data.Char (isNumber)
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
-import Data.List (foldl', find)
+import Data.List (find, foldl')
 import Data.List.Split (splitOn)
 import Data.Maybe (isJust)
 import Text.ParserCombinators.ReadP
-import Data.Char (isNumber)
-import Control.Applicative ((<|>))
+  ( ReadP,
+    char,
+    choice,
+    eof,
+    get,
+    many,
+    many1,
+    readP_to_S,
+    satisfy,
+    string,
+  )
 
 type Test = ReadP ()
 
 type InitMap = IntMap (Either [[Int]] Char)
 
-type TestMap = IntMap Test
+-- type TestMap = IntMap Test
 
 initMap :: ReadP InitMap
 initMap = do
@@ -29,7 +40,7 @@ initMap = do
           a <- read @Int <$> many1 (satisfy isNumber) <* (void (char ' ') <|> eof)
           f (g . (a :))
 
-buildTest' m i = buildTest m i >> eof
+-- buildTest' m i = buildTest m i >> eof
 
 buildTest :: InitMap -> Int -> Test
 buildTest m i = case m IM.!? i of
