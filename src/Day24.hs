@@ -2,6 +2,7 @@
 
 module Day24 where
 
+import Paths_AOC2020
 import Data.List (foldl')
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MS
@@ -56,8 +57,7 @@ next xs = blacks `Set.union` whites
 
 day24 :: IO ()
 day24 = do
-  -- input <- lines <$> readFile "input/test24.txt"
-  input <- lines <$> readFile "input/input24.txt"
+  input <- lines <$> (getDataDir >>= readFile . (++ "/input/input24.txt"))
   let initFloor =
         Set.fromList
           . map fst

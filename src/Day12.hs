@@ -1,8 +1,13 @@
 module Day12 where
 
+
+import Paths_AOC2020
 import Data.Bifunctor (bimap)
+
 import Data.Function (on)
+
 import Data.List (foldl')
+
 import MyLib (Direction (..))
 
 data Instruction = Move Direction Int | Forward Int | Turn Side Int deriving (Show, Eq, Ord)
@@ -90,6 +95,6 @@ readIns ferry ins = case ins of
 day12 :: IO ()
 day12 = do
   -- input <- map inputParser . lines <$> readFile "input/test12.txt"
-  input <- map inputParser . lines <$> readFile "input/input12.txt"
+  input <- map inputParser . lines <$> (getDataDir >>= readFile . (++ "/input/input12.txt"))
   putStrLn $ ("day12a: " ++) $ show $ uncurry ((+) `on` abs) $ _index $ foldl' readIns initFerry input
   putStrLn $ ("day12b: " ++) $ show $ uncurry ((+) `on` abs) $ _index2 $ foldl' readIns2 initFerry2 input

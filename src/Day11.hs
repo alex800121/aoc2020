@@ -1,11 +1,18 @@
 {-# LANGUAGE LambdaCase #-}
 module Day11 where
 
+
+import Paths_AOC2020
 import Data.Map (Map)
+
 import qualified Data.Map as Map
+
 import MyLib (drawMap, stablized, drawGraph)
+
 import Data.Maybe (mapMaybe, fromMaybe)
+
 import Data.Bifunctor (Bifunctor(bimap))
+
 import Control.Monad (join)
 
 type Index = (Int, Int)
@@ -38,7 +45,7 @@ surrounding = [(x, y) | x <- [-1..1], y <- [-1..1], (x, y) /= (0, 0)]
 
 day11 :: IO ()
 day11 = do
-  input <- drawMap (\case ; 'L' -> Just (Just False) ; '#' -> Just (Just True) ; _ -> (Just Nothing)) . lines <$> readFile "input/input11.txt"
+  input <- drawMap (\case ; 'L' -> Just (Just False) ; '#' -> Just (Just True) ; _ -> (Just Nothing)) . lines <$> (getDataDir >>= readFile . (++ "/input/input11.txt"))
   -- input <- drawMap (\case ; 'L' -> Just (Just False) ; '#' -> Just (Just True) ; _ -> (Just Nothing)) . lines <$> readFile "input/test11.txt"
   putStrLn $ ("day11a: " ++) $ show $ fmap (Map.size . Map.filter (fromMaybe False) . snd) $ stablized $ iterate step input
   putStrLn $ ("day11b: " ++) $ show $ fmap (Map.size . Map.filter (fromMaybe False) . snd) $ stablized $ iterate step' input

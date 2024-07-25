@@ -1,10 +1,17 @@
 module Day13 where
 
+
+import Paths_AOC2020
 import Control.Monad (foldM)
+
 import Data.Function (on)
+
 import Data.List (minimumBy)
+
 import Data.List.Split (splitOn)
+
 import Data.Maybe (fromJust)
+
 import MyLib (extEuc, mapFirst)
 
 type Bus = (Integer, Integer)
@@ -20,7 +27,7 @@ mergeBus (t1, s1) (t2, s2)
 
 day13 :: IO ()
 day13 = do
-  a : b : _ <- lines <$> readFile "input/input13.txt"
+  a : b : _ <- lines <$> (getDataDir >>= readFile . (++ "/input/input13.txt"))
   let departureTime = read @Integer a
       bus =
         map (fmap (read @Integer))

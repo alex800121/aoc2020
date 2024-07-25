@@ -1,4 +1,4 @@
-cabal-version:      3.0
+cabal-version:      3.4
 name:               AOC2020
 version:            0.1.0.0
 
@@ -22,9 +22,9 @@ maintainer:         alex800121@hotmail.com
 extra-source-files: CHANGELOG.md
 
 common shared
-    default-language: Haskell2010
+    default-language: GHC2021
     build-depends:
-        base >= 4.17.0.0,
+        base >= 4.18.0.0,
         megaparsec,
         parser-combinators,
         transformers,
@@ -35,14 +35,14 @@ common shared
         bytestring,
         base16-bytestring,
         multiset,
-        pqueue
+        pqueue,
+        AOC
     default-extensions: TypeFamilies, OverloadedRecordDot, TypeApplications, DataKinds
     ghc-options: -O2
 
 library
     import: shared
     exposed-modules:
-        MyLib,
         Day1,
         Day2,
         Day3,
@@ -68,10 +68,10 @@ library
         Day23,
         Day24,
         Day25,
-        Main
 
     -- Modules included in this library but not exported.
-    -- other-modules:
+    other-modules:
+        Paths_AOC2020
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -80,11 +80,9 @@ library
 
 executable AOC2020
     import: shared
-
-    main-is:          Main.hs
-
-    -- Modules included in this executable, other than Main.
+    main-is: Main.hs
     other-modules:
+        Paths_AOC2020,
         Day1,
         Day2,
         Day3,
@@ -109,12 +107,10 @@ executable AOC2020
         Day22,
         Day23,
         Day24,
-        Day25,
-        MyLib
+        Day25
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     -- build-depends:
     --     AOC2020
-    
     hs-source-dirs:   app, src

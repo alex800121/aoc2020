@@ -1,10 +1,17 @@
 module Day8 where
 
+
+import Paths_AOC2020
 import MyLib (firstRepeatBy)
+
 import Data.Array.IArray
+
 import Control.Monad (foldM)
+
 import Data.List (unfoldr, find)
+
 import Data.Function (on)
+
 import Data.Maybe (isNothing)
 
 data Instruction a
@@ -49,7 +56,7 @@ changeOne a = a'
 
 day8 :: IO ()
 day8 = do
-  input <- zip [0..] . map insParser . lines <$> readFile "input/input8.txt"
+  input <- zip [0..] . map insParser . lines <$> (getDataDir >>= readFile . (++ "/input/input8.txt"))
   let initMachine = M 0 (array (0, length input - 1) input) 0
       l = unfoldr (fmap (\x -> (x, x)) . run) initMachine
       x = _acc . (l !!) . subtract 1 . fst <$> firstRepeatBy ((==) `on` _n) l

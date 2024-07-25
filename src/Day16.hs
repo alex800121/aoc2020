@@ -1,9 +1,15 @@
 module Day16 where
 
+
+import Paths_AOC2020
 import Control.Monad (void)
+
 import Data.Function (on)
+
 import Data.List (delete, sortBy, transpose, uncons, isPrefixOf)
+
 import Data.List.Split (splitOn)
+
 import Debug.Trace (traceShow)
 
 type Range = (Int, Int)
@@ -57,7 +63,7 @@ calcValidFields i ((name, ranges) : fr') = do
 day16 :: IO ()
 day16 = do
   -- (fr, t, ts) <- inputParser <$> readFile "input/test16.txt"
-  (fr, t, ts) <- inputParser <$> readFile "input/input16.txt"
+  (fr, t, ts) <- inputParser <$> (getDataDir >>= readFile . (++ "/input/input16.txt"))
   let ts' =
         sortBy
           ( compare

@@ -2,8 +2,12 @@
 
 module Day3 where
 
+
+import Paths_AOC2020
 import Data.Array.IArray
+
 import Data.Bifunctor (bimap)
+
 import Debug.Trace (traceShow)
 
 type Index = (Int, Int)
@@ -26,7 +30,7 @@ collision start forest interval = length $ filter (forest !) coarse
 
 day3 :: IO ()
 day3 = do
-  input <- parseInput . lines <$> readFile "input/input3.txt"
+  input <- parseInput . lines <$> (getDataDir >>= readFile . (++ "/input/input3.txt"))
   -- input <- parseInput . lines <$> readFile "input/test3.txt"
   putStrLn $ ("day3a: " ++) $ show $ collision (0, 0) input (3, 1)
   putStrLn $ ("day3b: " ++) $ show $ product $ map (collision (0, 0) input) [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]

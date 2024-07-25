@@ -3,11 +3,18 @@
 
 module Day17 where
 
+
+import Paths_AOC2020
 import qualified Data.Array.IArray as I
+
 import qualified Data.Array.Unboxed as U
+
 import Data.List (groupBy, sortBy)
+
 import qualified Data.Map as Map
+
 import Data.Maybe (fromMaybe)
+
 import MyLib (drawGraph, drawMap)
 
 type Index = (Int, Int, Int)
@@ -73,7 +80,7 @@ printCube =
 day17 :: IO ()
 day17 = do
   -- input <- lines <$> readFile "input/test17.txt"
-  input <- lines <$> readFile "input/input17.txt"
+  input <- lines <$> (getDataDir >>= readFile . (++ "/input/input17.txt"))
   let initMap =
         map (\((x, y), e) -> ((x, y, 0), e))
           . Map.toList

@@ -2,8 +2,12 @@
 
 module Day18 where
 
+
+import Paths_AOC2020
 import MyLib (Parser, signedInteger)
+
 import Text.Megaparsec (anySingle, many, optional, parseMaybe, (<|>))
+
 import Text.Megaparsec.Char (char, space)
 
 data Op = Add | Mul deriving (Show, Eq, Ord)
@@ -48,7 +52,7 @@ op Mul = (*)
 
 day18 :: IO ()
 day18 = do
-  input <- lines <$> readFile "input/input18.txt"
+  input <- lines <$> (getDataDir >>= readFile . (++ "/input/input18.txt"))
   let input1 = traverse (parseMaybe expr) input
       input2 = traverse (parseMaybe expr2) input
   putStrLn

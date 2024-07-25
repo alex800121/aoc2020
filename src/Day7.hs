@@ -1,14 +1,25 @@
 module Day7 where
 
+
+import Paths_AOC2020
 import Data.Map (Map)
+
 import Control.Monad.Trans.State.Strict (State, evalState, get, modify)
+
 import qualified Data.Map as Map
+
 import Data.Set (Set)
+
 import qualified Data.Set as Set
+
 import Data.Maybe (mapMaybe, fromMaybe)
+
 import MyLib (Parser, signedInteger)
+
 import Text.Megaparsec (anySingle, (<|>), parseMaybe)
+
 import Text.Megaparsec.Char (char, space, string)
+
 import Control.Monad (foldM)
 
 type Bag = Map String [(String, Int)]
@@ -50,6 +61,6 @@ countBags b s = do
 day7 :: IO ()
 day7 = do
   -- bags <- Map.unionsWith Map.union . mapMaybe (parseMaybe bagParser) . lines <$> readFile "input/test7.txt"
-  bags <- Map.unionsWith (<>) . mapMaybe (parseMaybe bagParser) . lines <$> readFile "input/input7.txt"
+  bags <- Map.unionsWith (<>) . mapMaybe (parseMaybe bagParser) . lines <$> (getDataDir >>= readFile . (++ "/input/input7.txt"))
   putStrLn $ ("day7a: " ++) $ show $ length $ containBag bags "shiny gold" (Set.singleton "shiny gold") Set.empty
   putStrLn $ ("day7b: " ++) $ show $ (`evalState` Map.empty) $ countBags bags "shiny gold"

@@ -1,9 +1,15 @@
 module Day2 where
 
+
+import Paths_AOC2020
 import Data.Char (isNumber)
+
 import Data.Maybe (mapMaybe)
+
 import MyLib (Parser)
+
 import Text.Megaparsec
+
 import Text.Megaparsec.Char (char, space, string)
 
 data PW = PW {range :: (Int, Int), character :: Char, pw :: String} deriving (Show, Eq)
@@ -26,6 +32,6 @@ isValid2 (PW (x, y) c pw) =
 
 day2 :: IO ()
 day2 = do
-  input <- mapMaybe (parseMaybe inputParser) . lines <$> readFile "input/input2.txt"
+  input <- mapMaybe (parseMaybe inputParser) . lines <$> (getDataDir >>= readFile . (++ "/input/input2.txt"))
   putStrLn $ ("day2a: " ++) $ show $ length $ filter isValid input
   putStrLn $ ("day2b: " ++) $ show $ length $ filter isValid2 input
