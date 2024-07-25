@@ -3,22 +3,40 @@
 
 module Day20 where
 
+
+import Paths_AOC2020
 import Control.Monad (guard)
+
 import Data.Array.IArray
+
 import Data.Array.Unboxed
+
 import Data.Bifunctor (bimap)
+
 import Data.Char (isNumber)
+
 import Data.Either (partitionEithers)
+
 import Data.Function ((&))
+
 import Data.List (delete, find, foldl', nub, (\\))
+
 import Data.List.Split (splitOn)
+
 import Data.Map (Map)
+
 import qualified Data.Map as Map
+
 import Data.Maybe (catMaybes, isJust, listToMaybe, mapMaybe)
+
 import Data.Set (Set)
+
 import qualified Data.Set as Set
+
 import Data.Tuple (swap)
+
 import Debug.Trace (traceShow)
+
 import MyLib (Direction (..), drawGraph, drawMap)
 
 type PicMap = Map Index Tile
@@ -235,7 +253,7 @@ day20 = do
       )
       . splitOn "\n\n"
       -- <$> readFile "input/test20.txt"
-      <$> readFile "input/input20.txt"
+      <$> (getDataDir >>= readFile . (++ "/input/input20.txt"))
   let x = snd $ input !! 4
       y = flipTile $ rotateTile x
       input' = map snd input

@@ -1,11 +1,19 @@
 module Day21 where
 
+
+import Paths_AOC2020
 import Data.List.Split (splitOn)
+
 import Data.Map (Map)
+
 import qualified Data.Map as Map
+
 import Data.Set (Set)
+
 import qualified Data.Set as Set
+
 import Debug.Trace (traceShow)
+
 import Data.List (intercalate)
 
 type Allergen = String
@@ -47,7 +55,7 @@ reduceAllergen m
 
 day21 :: IO ()
 day21 = do
-  input <- map readFood . lines <$> readFile "input/input21.txt"
+  input <- map readFood . lines <$> (getDataDir >>= readFile . (++ "/input/input21.txt"))
   let allergens = foldr (\x acc -> Set.union acc (_allergen x))  Set.empty input
       x = reduceAllergen $ allergenMap input
       withAllergen = Set.unions $ Map.elems x

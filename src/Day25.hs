@@ -1,8 +1,13 @@
 module Day25 where
 
+
+import Paths_AOC2020
 import Data.List (elemIndex, find, findIndex)
+
 import Data.Map (Map)
+
 import qualified Data.Map as Map
+
 import Debug.Trace (traceShow)
 
 doorPub = 1526110

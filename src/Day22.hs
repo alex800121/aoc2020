@@ -1,10 +1,17 @@
 module Day22 where
 
+
+import Paths_AOC2020
 import Data.List.Split (splitOn)
+
 import Data.Sequence
+
 import qualified Data.Sequence as Seq
+
 import Data.Set (Set)
+
 import qualified Data.Set as Set
+
 import Debug.Trace (traceShow)
 
 type GameState = (Seq Int, Seq Int)
@@ -43,7 +50,7 @@ day22 = do
       . map (Seq.fromList . map (read @Int) . tail . lines)
       . splitOn "\n\n"
       -- <$> readFile "input/test22.txt"
-      <$> readFile "input/input22.txt"
+      <$> (getDataDir >>= readFile . (++ "/input/input22.txt"))
   putStrLn
     . ("day22a: "++)
     . show

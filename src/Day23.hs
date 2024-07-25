@@ -1,11 +1,19 @@
 module Day23 where
 
+
+import Paths_AOC2020
 import Control.Monad (forM_)
+
 import Control.Monad.ST (ST, runST)
+
 import Data.Char (digitToInt, intToDigit)
+
 import Data.List (unfoldr)
+
 import qualified Data.Vector.Unboxed as U
+
 import qualified Data.Vector.Unboxed.Mutable as M
+
 import Debug.Trace (traceShowM)
 
 input = "962713854"

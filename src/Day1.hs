@@ -1,5 +1,7 @@
 module Day1 where
 
+
+import Paths_AOC2020
 import Data.List
 import Data.Maybe (maybeToList, mapMaybe)
 import Control.Applicative (empty)
@@ -14,6 +16,6 @@ findTarget target n l = do
 
 day1 :: IO ()
 day1 = do
-  input <- sort . map (read @Int) . lines <$> readFile "input/input1.txt"
+  input <- sort . map (read @Int) . lines <$> (getDataDir >>= readFile . (++ "/input/input1.txt"))
   putStrLn $ ("day1a: " ++) $ show $ map product $ findTarget 2020 2 input
   putStrLn $ ("day1b: " ++) $ show $ map product $ findTarget 2020 3 input

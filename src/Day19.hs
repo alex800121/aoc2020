@@ -1,13 +1,23 @@
 module Day19 where
 
+
+import Paths_AOC2020
 import Control.Applicative ((<|>))
+
 import Control.Monad (void)
+
 import Data.Char (isNumber)
+
 import Data.IntMap (IntMap)
+
 import qualified Data.IntMap as IM
+
 import Data.List (find, foldl')
+
 import Data.List.Split (splitOn)
+
 import Data.Maybe (isJust)
+
 import Text.ParserCombinators.ReadP
   ( ReadP,
     char,
@@ -52,7 +62,7 @@ buildTest m i = case m IM.!? i of
 
 day19 :: IO ()
 day19 = do
-  a : b : _ <- map lines . splitOn "\n\n" <$> readFile "input/input19.txt"
+  a : b : _ <- map lines . splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/input19.txt"))
   -- a : b : _ <- map lines . splitOn "\n\n" <$> readFile "input/test19.txt"
   let test = IM.unions $ map (fst . head . readP_to_S initMap) a
       test0 = buildTest test 0

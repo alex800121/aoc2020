@@ -1,10 +1,17 @@
 module Day4 where
 
+
+import Paths_AOC2020
 import Data.List ((\\))
+
 import Data.List.Split (splitOn)
+
 import Data.Maybe (fromMaybe, isJust)
+
 import MyLib (Parser)
+
 import Text.Megaparsec
+
 import Text.Megaparsec.Char (char, digitChar, eol, hexDigitChar, string)
 
 requiredFields :: [String]
@@ -58,7 +65,7 @@ cid = do
 
 day4 :: IO ()
 day4 = do
-  input <- map words . splitOn "\n\n" <$> readFile "input/input4.txt"
+  input <- map words . splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/input4.txt"))
   let fields = map (map (takeWhile (/= ':'))) input
   putStrLn $ ("day4a: " ++) $ show $ length $ filter (null . (requiredFields \\)) fields
   putStrLn $ ("day4b: " ++) $ show $ length $ filter valid input

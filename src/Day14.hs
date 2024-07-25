@@ -2,15 +2,26 @@
 
 module Day14 where
 
+
+import Paths_AOC2020
 import Control.Monad (foldM)
+
 import Data.Bits (Bits (clearBit, setBit))
+
 import Data.List (foldl', unfoldr)
+
 import Data.Map (Map)
+
 import qualified Data.Map as Map
+
 import Data.Maybe (fromJust, mapMaybe)
+
 import Data.Tuple (swap)
+
 import MyLib (Parser)
+
 import Text.Megaparsec (anySingleBut, many, parseMaybe, parseTest, takeRest, (<|>))
+
 import Text.Megaparsec.Char (string)
 
 type Mask = [(Int, Maybe Bool)]
@@ -88,7 +99,7 @@ readIns2 (m, n) (Mask i) = (i, n)
 day14 :: IO ()
 day14 = do
   -- input <- mapMaybe (parseMaybe parser) . lines <$> readFile "input/test14.txt"
-  input <- mapMaybe (parseMaybe parser) . lines <$> readFile "input/input14.txt"
+  input <- mapMaybe (parseMaybe parser) . lines <$> (getDataDir >>= readFile . (++ "/input/input14.txt"))
   putStrLn
     . ("day14a: " ++)
     . show

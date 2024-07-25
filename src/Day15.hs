@@ -2,14 +2,24 @@
 
 module Day15 where
 
+
+import Paths_AOC2020
 import Control.Monad (forM_)
+
 import Control.Monad.ST (ST, runST)
+
 import Data.Array.Base (STUArray (STUArray))
+
 import Data.Array.MArray
+
 import Data.Array.ST (STUArray)
+
 import Data.IntMap.Strict (IntMap)
+
 import qualified Data.IntMap.Strict as IntMap
+
 import Data.List (find)
+
 import MyLib (firstRepeat)
 
 type Mem = ((Int, Int), IntMap Int)
