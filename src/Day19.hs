@@ -32,12 +32,12 @@ initMap = do
           a <- read @Int <$> some (satisfy isNumber) <* (void (char ' ') <|> eof)
           f (g . (a :))
 
-buildTest :: forall ef eh. (Choose <| ef, ChooseH <<| eh, Empty <| ef, State String <| ef) => InitMap -> Int -> Eff eh ef ()
+buildTest :: forall ef eh. (Choose <| ef, Empty <| ef, State String <| ef) => InitMap -> Int -> Eff eh ef ()
 buildTest m i = case m IM.!? i of
   Nothing -> error "No rule"
   Just (Right c) -> void $ char c
   Just (Left l) -> do
-    xs <- choiceH l
+    xs <- choice l
     traverse_ (buildTest m) xs
 
 day19 :: IO ()
