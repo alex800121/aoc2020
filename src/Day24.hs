@@ -6,13 +6,13 @@ import Data.Array.IArray qualified as I
 import Data.Array.Unboxed (UArray)
 import Data.Bifunctor (Bifunctor (..))
 import Data.Bits (Bits (..))
+import Data.IntSet qualified as IS
 import Data.List (foldl', nub, sort)
 import Data.Maybe (mapMaybe)
 import Data.MultiSet qualified as MS
-import Data.IntSet qualified as IS
 import Data.Vector.Unboxed.Mutable qualified as MV
-import Paths_AOC2020
 import Debug.Trace
+import Paths_AOC2020
 
 type Index = (Int, Int)
 
