@@ -1,277 +1,158 @@
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Day20 where
 
-
-import Paths_AOC2020
-import Control.Monad (guard)
-
-import Data.Array.IArray
-
-import Data.Array.Unboxed
-
-import Data.Bifunctor (bimap)
-
+import Data.Array qualified as A
+import Data.Bifunctor (Bifunctor (..))
+import Data.Bits (Bits (..), FiniteBits)
 import Data.Char (isNumber)
-
 import Data.Either (partitionEithers)
-
-import Data.Function ((&))
-
-import Data.List (delete, find, foldl', nub, (\\))
-
+import Data.List (foldl', sort, tails)
 import Data.List.Split (splitOn)
-
-import Data.Map (Map)
-
-import qualified Data.Map as Map
-
-import Data.Maybe (catMaybes, isJust, listToMaybe, mapMaybe)
-
-import Data.Set (Set)
-
-import qualified Data.Set as Set
-
-import Data.Tuple (swap)
-
-import Debug.Trace (traceShow)
-
-import MyLib (Direction (..), drawGraph, drawMap)
-
-type PicMap = Map Index Tile
-
-type Tile = UArray Index Bool
-
-data TileType = Corner | Side | Center deriving (Show, Eq, Ord)
-
-type TileVar = (Op' Int, Tile)
+import Data.Maybe (fromMaybe, listToMaybe, maybeToList)
+import Data.Vector.Storable (Vector)
+import Data.Vector.Storable qualified as V
+import Data.WideWord (Word128)
+import Data.Word (Word16, Word8)
+import Debug.Trace
+import MyLib (pickNSplit, toIndex)
+import Paths_AOC2020 (getDataDir)
 
 type Index = (Int, Int)
 
-data Op = Flip | Rotate deriving (Show, Eq, Ord)
+type Pic = Vector Word8
 
-data Op' a = Op {flipN :: a, rotateN :: a} deriving (Show, Eq, Ord, Functor)
+type Tile = (Pic, Edges)
 
-dragon :: Tile
-dragon = array b $ Map.assocs m
+type NTile = (Int, Tile)
+
+type Edges = Vector Edge
+
+type Edge = Word16
+
+run :: [NTile] -> [(Index, NTile)]
+run (x : xs) = go [] [((0, 0), x)] xs
   where
-    b = (,) <$> minimum <*> maximum $ Map.keys m
-    m =
-      drawMap (\case '#' -> Just True; _ -> Just False)
-        . lines
-        $ "                  # \n#    ##    ##    ###\n #  #  #  #  #  #   "
-
-findDragon :: Tile -> Tile -> [Index]
-findDragon d t =
-  [ (x, y)
-    | let l =
-            [ (a, b)
-              | a <- [dx0 .. dx1],
-                b <- [dy0 .. dy1]
-            ],
-      x <- [tx0 .. tx1 - dx1],
-      y <- [ty0 .. ty1 - dy1],
-      all (\(i, j) -> f (d ! (i, j)) (t ! (i - dx0 + x, j - dy0 + y))) l
-  ]
-  where
-    ((dx0, dy0), (dx1, dy1)) = bounds d
-    ((tx0, ty0), (tx1, ty1)) = bounds t
-    f True a = a
-    f False _ = True
-
-normalize :: Tile -> Tile
-normalize t = ixmap ((0, 0), (x1 - x0, y1 - y0)) (\(x, y) -> (x + x0, y + y0)) t
-  where
-    ((x0, y0), (x1, y1)) = bounds t
-
-stitch :: PicMap -> Tile
-stitch m =
-  normalize $
-    array
-      ((cx + 1 + (ax * w), cy + 1 + (ay * h)), (dx - 1 + (bx * w), dy - 1 + (by * h)))
-      [ ((x + (i * w), y + (j * h)), (m Map.! (i, j)) ! (x, y))
-        | x <- [cx + 1 .. dx - 1],
-          y <- [cy + 1 .. dy - 1],
-          i <- [ax .. bx],
-          j <- [ay .. by]
-      ]
-  where
-    ((ax, ay), (bx, by)) = (,) <$> minimum <*> maximum $ Map.keys m
-    ((cx, cy), (dx, dy)) = bounds $ m Map.! (ax, ay)
-    bax = bx - ax + 1
-    bay = by - ay + 1
-    w = dx - cx - 1
-    h = dy - cy - 1
-
-picMap :: [Tile] -> PicMap
-picMap [] = Map.empty
-picMap (x : xs) = go Map.empty (Set.singleton ((0, 0), x)) xs
-  where
-    go :: PicMap -> Set (Index, Tile) -> [Tile] -> PicMap
-    -- go m t ts | traceShow (Map.keys m) False = undefined
-    go m t ts = case ts of
-      [] -> m'
-      tss ->
-        let (ts', t') = fmap Set.fromList $ partitionEithers $ map (f (Set.toList t)) tss
-            f [] a = Left a
-            f (((xb, yb), b) : bs) a = case sharedSides b a of
-              Nothing -> f bs a
-              Just (a', (xa, ya)) -> Right ((xa + xb, ya + yb), a')
-         in go m' t' ts'
+    go acc xs [] = xs <> acc
+    go acc [] _ = acc
+    go acc (x : xs) ys = go (x : acc) (xs <> b) a
       where
-        m' = Set.foldr (uncurry Map.insert) m t
+        (a, b) = partitionEithers $ map (match x) ys
 
-isTypeIn :: Tile -> [Tile] -> TileType
-isTypeIn t ts = case s of
-  2 -> Corner
-  3 -> Side
-  4 -> Center
-  _ -> error "not possible"
+match :: (Index, NTile) -> NTile -> Either NTile (Index, NTile)
+match ((x, y), (_, (_, redge))) t@(n, (tpic, tedge)) = maybe (Left t) Right (listToMaybe ijk)
   where
-    ts' = delete t ts
-    s = length $ mapMaybe (sharedSides t) ts'
+    ijk =
+      [ (bimap (+ x) (+ y) $ toIndex (toEnum i0), (n, (rotatePic 8 rot tpicFlipped, rotateEdges rot tedgeFlipped)))
+        | (i0, e0) <- zip [0 ..] $ V.toList redge,
+          (tpicFlipped, tedgeFlipped) <- [(tpic, tedge), (flipPic tpic, flipEdges tedge)],
+          (i1, e1) <- zip [0 ..] $ V.toList tedgeFlipped,
+          reverseWord 10 e0 == e1,
+          let rot = i1 - i0 - 2
+      ]
 
-tileVar :: Tile -> [TileVar]
-tileVar t = matchT
+flipPic :: (V.Storable a) => Vector a -> Vector a
+flipPic = V.reverse
+
+rotateEdges :: Int -> Edges -> Edges
+rotateEdges 0 v = v
+rotateEdges 1 v = V.backpermute v (V.fromList [1, 2, 3, 0])
+rotateEdges 2 v = V.backpermute v (V.fromList [2, 3, 0, 1])
+rotateEdges 3 v = V.backpermute v (V.fromList [3, 0, 1, 2])
+rotateEdges n v = rotateEdges (n `mod` 4) v
+
+rotatePic :: (V.Storable a, FiniteBits a, Num a) => Int -> Int -> Vector a -> Vector a
+rotatePic l 0 v = v
+rotatePic l 1 v = V.generate l f
   where
-    opList = [Op x y | x <- [0, 1], y <- [0 .. 3]]
-    matchT = map (\x -> (x, op x t)) opList
-
-sharedSides :: Tile -> Tile -> Maybe (Tile, Index)
-sharedSides ref t | ref == t = Nothing
-sharedSides ref t = matchSide
+    f i = V.foldl' (\acc x -> if x `testBit` i then (acc `shiftL` 1) `setBit` 0 else acc `shiftL` 1) 0 v
+rotatePic l 2 v = V.reverse (V.map (reverseWord l) v)
+rotatePic l 3 v = V.generate l f
   where
-    rVar = tileVar ref
-    matchSide = listToMaybe $ do
-      (rOp, r') <- rVar
-      (rDir, rSide) <- sides r'
-      (tDir, tSide) <- sides t
-      guard $ rSide == reverse tSide && tDir == succ (succ rDir)
-      let rIndex = case rDir of
-            North -> (0, -1)
-            East -> (1, 0)
-            South -> (0, 1)
-            West -> (-1, 0)
-      return (reverseOp rOp t, reverseIndex rOp rIndex)
+    f i = V.foldr (\x acc -> if x `testBit` (l - 1 - i) then acc * 2 + 1 else acc * 2) 0 v
+rotatePic l i v = rotatePic l (i `mod` 4) v
 
-reverseIndex :: Op' Int -> Index -> Index
-reverseIndex (Op a b) i =
-  foldr
-    ($)
-    i
-    (replicate (a `mod` 2) flipIndex <> replicate (negate b `mod` 4) rotateIndex)
+flipEdges :: Vector Word16 -> Vector Word16
+flipEdges = (`V.backpermute` V.fromList [2, 1, 0, 3]) . V.map (reverseWord 10)
+
+readInput :: String -> NTile
+readInput s = (n, (pic, edges))
   where
-    flipIndex (x, y) = (-x, y)
-    rotateIndex (x, y) = (-y, x)
+    x : xs = lines s
+    n = read (filter isNumber x)
+    edges =
+      V.fromList
+        [ fromChar (head xs),
+          fromChar (map last xs),
+          fromChar (reverse (last xs)),
+          fromChar (reverse (map head xs))
+        ]
+    pic = V.fromList $ map (fromChar . init . tail) $ init $ tail xs
 
-op, reverseOp :: Op' Int -> Tile -> Tile
-op (Op a b) t =
-  foldr
-    ($)
-    t
-    (replicate (b `mod` 4) rotateTile <> replicate (a `mod` 2) flipTile)
-reverseOp (Op a b) t =
-  foldr
-    ($)
-    t
-    (replicate (a `mod` 2) flipTile <> replicate (negate b `mod` 4) rotateTile)
-
-sides :: Tile -> [(Direction, [Bool])]
-sides t =
-  map
-    (fmap (map (t !)))
-    [ (North, [(x, minY) | x <- [minX .. maxX]]),
-      (East, [(maxX, y) | y <- [minY .. maxY]]),
-      (South, [(x, maxY) | x <- reverse [minX .. maxX]]),
-      (West, [(minX, y) | y <- reverse [minY .. maxY]])
-    ]
+reverseWord :: (Num a, FiniteBits a) => Int -> a -> a
+reverseWord l x = f 0 (l - 1) x
   where
-    ((minX, minY), (maxX, maxY)) = bounds t
+    f acc l x
+      | x == 0 || l < 0 = acc
+      | x `testBit` 0 = f (acc `setBit` l) (pred l) (x `shiftR` 1)
+      | otherwise = f acc (pred l) (x `shiftR` 1)
 
-flipDiagonal :: Tile -> Tile
-flipDiagonal = rotateTile . flipTile
+fromChar :: (Integral a) => String -> a
+fromChar = foldl' (\acc -> (\case '#' -> acc * 2 + 1; '.' -> acc * 2)) 0
 
-flipTile :: Tile -> Tile
-flipTile t =
-  let i = bounds t
-   in ixmap
-        i
-        ( \(x, y) -> (negate (x - fst (snd i) + fst (fst i)), y)
-        )
-        t
+dragon =
+  map (foldl' (\acc -> \case '#' -> (acc * 2) + 1; _ -> acc * 2) (0 :: Word128)) $
+    lines "                  # \n#    ##    ##    ###\n #  #  #  #  #  #   "
 
-rotateTile :: Tile -> Tile
-rotateTile t =
-  let i = bounds t
-      i' = bimap swap swap i
-   in ixmap
-        i'
-        ( \(x, y) ->
-            (y, negate (x - fst (snd i') + fst (fst i')))
-        )
-        t
+fromPic :: (V.Storable a, Bits a) => Int -> Vector a -> String
+fromPic n = unlines . map (fromInt n "") . V.toList
 
-testTile :: Tile
-testTile =
-  array
-    ((0, 0), (2, 1))
-    [ ((0, 0), True),
-      ((0, 1), False),
-      ((1, 0), True),
-      ((1, 1), False),
-      ((2, 0), True),
-      ((2, 1), True)
-    ]
+fromInt 0 acc _ = acc
+fromInt n acc x = fromInt (pred n) (if x `testBit` 0 then '#' : acc else '.' : acc) (x `shiftR` 1)
 
-printTile :: Tile -> String
-printTile =
-  unlines
-    . drawGraph (\case Nothing -> ' '; Just True -> '#'; Just False -> '.')
-    . Map.fromList
-    . assocs
+buildImage :: [(Index, NTile)] -> (Int, Vector Word128)
+buildImage xs = (a, f (V.replicate 8 0) minx miny)
+  where
+    ix = map fst xs
+    b@((minx, miny), (maxx, maxy)) = foldl' (\((a, b), (c, d)) (x, y) -> ((min a x, min b y), (max c x, max d y))) ((0, 0), (0, 0)) ix
+    a = product [i | (ix, (i, _)) <- xs, ix `elem` [(x, y) | x <- [minx, maxx], y <- [miny, maxy]]]
+    w = A.array b [(ix, c) | (ix, (_, (c, _))) <- xs]
+    f acc x y
+      | y > maxy = V.replicate 0 0
+      | x > maxx = acc <> f (V.replicate 8 0) minx (succ y)
+      | otherwise = f (V.zipWith (\a b -> (a `shiftL` 8) .|. fromIntegral b) acc (w A.! (x, y))) (succ x) y
+
+calcDragons :: Int -> Vector Word128 -> Int
+calcDragons l pic = np - nd * length pics
+  where
+    pics =
+      [ ()
+        | n <- [0 .. 3],
+          f <- [id, flipPic],
+          let p = V.toList $ rotatePic (8 * l) n $ f pic,
+          p' <- tails p,
+          n <- [0 .. (8 * l - 1)],
+          dragon == zipWith (.&.) dragon (map (`shiftR` n) p')
+      ]
+    nd = sum $ map popCount dragon
+    np = V.sum $ V.map popCount pic
 
 day20 :: IO ()
 day20 = do
-  input <-
-    map
-      ( ( (,)
-            <$> ( read @Int
-                    . filter isNumber
-                    . head
-                )
-            <*> ( \x ->
-                    let m =
-                          drawMap (\case '#' -> Just True; '.' -> Just False)
-                            . tail
-                            $ x
-                        (a, b) = (,) <$> minimum <*> maximum $ Map.keys m
-                     in array (a, b) $ Map.assocs m :: UArray Index Bool
-                )
-        )
-          . lines
-      )
-      . splitOn "\n\n"
-      -- <$> readFile "input/test20.txt"
-      <$> (getDataDir >>= readFile . (++ "/input/input20.txt"))
-  let x = snd $ input !! 4
-      y = flipTile $ rotateTile x
-      input' = map snd input
+  input <- map readInput . splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/input20.txt"))
+  -- input <- map readInput . splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/test20.txt"))
+  let (a, b) = buildImage $ run input
   putStrLn
     . ("day20a: " ++)
     . show
-    . product
-    . map fst
-    $ filter ((== Corner) . (`isTypeIn` input') . snd) input
-  let bigPicMap = picMap input'
-      bigPic = stitch bigPicMap
-      dragonN = fmap length
-        . find (not . null)
-        . map (findDragon dragon . snd)
-        $ tileVar bigPic
-      dragonL = length $ filter id $ elems dragon
-      bigPicL = length $ filter id $ elems bigPic
+    $ a
   putStrLn
     . ("day20b: " ++)
     . show
-    $ subtract <$> fmap (* dragonL) dragonN <*> pure bigPicL
+    $ calcDragons 12 b
+
+fromEdge :: Edge -> String
+fromEdge = fromInt 10 ""
+
+fromEdges :: Edges -> [String]
+fromEdges = map (fromInt 10 "") . V.toList

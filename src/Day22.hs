@@ -1,18 +1,13 @@
 module Day22 where
 
-
-import Paths_AOC2020
+import Data.HashSet (HashSet)
+import Data.HashSet qualified as Set
+import Data.Hashable
 import Data.List.Split (splitOn)
-
-import Data.Sequence
-
-import qualified Data.Sequence as Seq
-
-import Data.Set (Set)
-
-import qualified Data.Set as Set
-
+import Data.Sequence (Seq (..), ViewL (..), viewl)
+import Data.Sequence qualified as Seq
 import Debug.Trace (traceShow)
+import Paths_AOC2020
 
 type GameState = (Seq Int, Seq Int)
 
@@ -24,24 +19,28 @@ day22a (lhs, rhs) = case (viewl lhs, viewl rhs) of
 
 calc = snd . foldr (\x (i, acc) -> (i + 1, acc + (x * i))) (1, 0)
 
-day22b :: Set GameState -> GameState -> Either Int Int
--- day22b _ g | traceShow g False = undefined
-day22b cache g@(lhs, rhs) = case (viewl lhs, viewl rhs) of
+day22b :: Int -> HashSet GameState -> GameState -> Either Int Int
+day22b level cache g@(lhs, rhs) = case (viewl lhs, viewl rhs) of
   (EmptyL, _) -> Right $ calc rhs
   (_, EmptyL) -> Left $ calc lhs
   _ | g `Set.member` cache -> Left $ calc lhs
+  _ | level /= 0 && lHigh > rHigh && lHigh > len - 2 -> Left 0
   (l :< ls, r :< rs)
     | l <= Seq.length ls,
       r <= Seq.length rs ->
         let lhs' = Seq.take l ls
             rhs' = Seq.take r rs
-            result = case day22b Set.empty (lhs', rhs') of
+            result = case day22b (succ level) Set.empty (lhs', rhs') of
               Left _ -> (ls :|> l :|> r, rs)
               Right _ -> (ls, rs :|> r :|> l)
-         in day22b (Set.insert g cache) result
+         in day22b level (Set.insert g cache) result
   (l :< ls, r :< rs) ->
-    day22b (Set.insert g cache) $
+    day22b level (Set.insert g cache) $
       if l > r then (ls :|> l :|> r, rs) else (ls, rs :|> r :|> l)
+  where
+    lHigh = maximum lhs
+    rHigh = maximum rhs
+    len = length lhs + length rhs
 
 day22 :: IO ()
 day22 = do
@@ -49,13 +48,12 @@ day22 = do
     (\(x : y : _) -> (x, y))
       . map (Seq.fromList . map (read @Int) . tail . lines)
       . splitOn "\n\n"
-      -- <$> readFile "input/test22.txt"
       <$> (getDataDir >>= readFile . (++ "/input/input22.txt"))
   putStrLn
-    . ("day22a: "++)
+    . ("day22a: " ++)
     . show
     $ day22a input
   putStrLn
-    . ("day22a: "++)
+    . ("day22b: " ++)
     . show
-    $ day22b Set.empty input
+    $ day22b 0 Set.empty input

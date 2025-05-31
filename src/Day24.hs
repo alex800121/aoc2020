@@ -1,35 +1,31 @@
-{-# LANGUAGE TupleSections #-}
-
 module Day24 where
 
+import Control.Monad (foldM)
+import Control.Monad.ST.Strict (runST)
+import Data.Array.IArray qualified as I
+import Data.Array.Unboxed (UArray)
+import Data.Bifunctor (Bifunctor (..))
+import Data.Bits (Bits (..))
+import Data.List (foldl', nub, sort)
+import Data.Maybe (mapMaybe)
+import Data.MultiSet qualified as MS
+import Data.IntSet qualified as IS
+import Data.Vector.Unboxed.Mutable qualified as MV
 import Paths_AOC2020
-import Data.List (foldl')
-import Data.MultiSet (MultiSet)
-import qualified Data.MultiSet as MS
-import Data.Set (Set)
-import qualified Data.Set as Set
+import Debug.Trace
 
 type Index = (Int, Int)
 
-type Floor = Set Index
+parseDirection :: Index -> String -> Index
+parseDirection i [] = i
+parseDirection (x, y) ('e' : xs) = parseDirection (x + 1, y) xs
+parseDirection (x, y) ('s' : 'e' : xs) = parseDirection (x + 1, y + 1) xs
+parseDirection (x, y) ('s' : 'w' : xs) = parseDirection (x, y + 1) xs
+parseDirection (x, y) ('w' : xs) = parseDirection (x - 1, y) xs
+parseDirection (x, y) ('n' : 'w' : xs) = parseDirection (x - 1, y - 1) xs
+parseDirection (x, y) ('n' : 'e' : xs) = parseDirection (x, y - 1) xs
 
-data Direction
-  = E
-  | SE
-  | SW
-  | W
-  | NW
-  | NE
-  deriving (Show, Eq, Ord, Bounded, Enum)
-
-parseDirection :: String -> [Direction]
-parseDirection "" = []
-parseDirection ('e' : xs) = E : parseDirection xs
-parseDirection ('s' : 'e' : xs) = SE : parseDirection xs
-parseDirection ('s' : 'w' : xs) = SW : parseDirection xs
-parseDirection ('w' : xs) = W : parseDirection xs
-parseDirection ('n' : 'w' : xs) = NW : parseDirection xs
-parseDirection ('n' : 'e' : xs) = NE : parseDirection xs
+adjacent = [(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)]
 
 {-
 
@@ -39,40 +35,74 @@ parseDirection ('n' : 'e' : xs) = NE : parseDirection xs
 
 -}
 
-readDirection :: Index -> Direction -> Index
-readDirection (x, y) d = case d of
-  E -> (x + 1, y)
-  SE -> (x + 1, y + 1)
-  SW -> (x, y + 1)
-  W -> (x - 1, y)
-  NW -> (x - 1, y - 1)
-  NE -> (x, y - 1)
+toInt (x, y) = x * (gen * 2 + len) + y
 
-next :: Floor -> Floor
-next xs = blacks `Set.union` whites
+gen = 101
+
+len = 27
+
+step :: UArray Index Bool -> UArray Index Bool
+step a = I.accumArray (const id) False b' [(i, f i b) | (i, b) <- I.assocs a]
   where
-    xss = MS.unions $ map (MS.fromSet . (\d -> Set.map (`readDirection` d) xs)) [minBound .. maxBound]
-    blacks = Set.filter (\i -> MS.occur i xss `elem` [1, 2]) xs
-    whites = MS.toSet $ MS.filter (\i -> Set.notMember i xs && MS.occur i xss == 2) xss
+    b = I.bounds a
+    b' = bimap (bimap pred pred) (bimap succ succ) b
+    f (x, y) b = b && s == 1 || s == 2 || not b && s == 2
+      where
+        s = length $ filter id $ mapMaybe ((a I.!?) . bimap (+ x) (+ y)) adjacent
+
+run :: [Index] -> Int -> Int
+run xs i = length $ filter id $ I.elems $ iterate step a !! i
+  where
+    b = foldl' (\((a, b), (c, d)) (x, y) -> ((min a x, min b y), (max c x, max d y))) ((0, 0), (0, 0)) xs
+    b' = bimap (bimap pred pred) (bimap succ succ) b
+    a = I.accumArray (const id) False b' [(i, True) | i <- xs]
+
+run' :: [Index] -> Int -> Int
+run' xs i = runST $ do
+  length
+    <$> foldM
+      ( \xs _ -> do
+          s <- MV.replicate (len * len) (0 :: Int)
+          c <-
+            foldM
+              ( \acc x -> do
+                  foldM
+                    ( \a b -> do
+                        MV.modify s succ (x + b)
+                        n <- MV.read s (x + b)
+                        if n == 2 then pure ((x + b) : a) else pure a
+                    )
+                    acc
+                    iadjacent
+              )
+              []
+              xs
+          o0 <- foldM (\a b -> MV.read s b >>= \x -> if x == 1 || x == 2 then pure (IS.insert b a) else pure a) IS.empty xs
+          IS.toList <$> foldM (\a b -> MV.read s b >>= \x -> if x == 2 then pure (IS.insert b a) else pure a) o0 c
+      )
+      (IS.toList xs')
+      [0 .. i - 1]
+  where
+    b@((minx, miny), (maxx, maxy)) = foldl' (\((a, b), (c, d)) (x, y) -> ((min a x, min b y), (max c x, max d y))) ((0, 0), (0, 0)) xs
+    len = (maxy - miny + 1) + (i * 2) + 2
+    toInt (x, y) = x * len + y
+    xs' = IS.fromList $ map (toInt . bimap (+ (i + minx)) (+ (i + miny))) xs
+    iadjacent = map toInt adjacent
 
 day24 :: IO ()
 day24 = do
-  input <- lines <$> (getDataDir >>= readFile . (++ "/input/input24.txt"))
-  let initFloor =
-        Set.fromList
-          . map fst
-          . filter (odd . snd)
-          . MS.toOccurList
-          . MS.fromList
-          . map (foldl' readDirection (0, 0) . parseDirection)
-          $ input
+  input <-
+    MS.foldOccur (\x o acc -> if odd o then x : acc else acc) []
+      . MS.fromList
+      . map (parseDirection (0, 0))
+      . lines
+      <$> (getDataDir >>= readFile . (++ "/input/input24.txt"))
   putStrLn
     . ("day24a: " ++)
     . show
     . length
-    $ initFloor
+    $ input
   putStrLn
     . ("day24b: " ++)
     . show
-    . length
-    $ iterate next initFloor !! 100
+    $ run' input 100

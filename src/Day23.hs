@@ -1,20 +1,13 @@
 module Day23 where
 
-
-import Paths_AOC2020
 import Control.Monad (forM_)
-
 import Control.Monad.ST (ST, runST)
-
 import Data.Char (digitToInt, intToDigit)
-
 import Data.List (unfoldr)
-
-import qualified Data.Vector.Unboxed as U
-
-import qualified Data.Vector.Unboxed.Mutable as M
-
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as M
 import Debug.Trace (traceShowM)
+import Paths_AOC2020
 
 input = "962713854"
 
@@ -28,8 +21,8 @@ initInput s limit = do
   where
     s' = map digitToInt s
     t = maximum s' + 1
-    f i [] l = 
-      if maximum s' < limit 
+    f i [] l =
+      if maximum s' < limit
         then M.write l i t >> M.write l limit (head s')
         else M.write l i (head s')
     f i (x : xs) l = M.write l i x >> f x xs l
