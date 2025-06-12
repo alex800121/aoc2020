@@ -2,26 +2,16 @@
 
 module Day14 where
 
-
-import Paths_AOC2020
 import Control.Monad (foldM)
-
 import Data.Bits (Bits (clearBit, setBit))
-
 import Data.List (foldl', unfoldr)
-
 import Data.Map (Map)
-
-import qualified Data.Map as Map
-
+import Data.Map qualified as Map
 import Data.Maybe (fromJust, mapMaybe)
-
 import Data.Tuple (swap)
-
 import MyLib (Parser)
-
+import Paths_AOC2020
 import Text.Megaparsec (anySingleBut, many, parseMaybe, parseTest, takeRest, (<|>))
-
 import Text.Megaparsec.Char (string)
 
 type Mask = [(Int, Maybe Bool)]

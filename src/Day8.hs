@@ -1,26 +1,18 @@
 module Day8 where
 
-
-import Paths_AOC2020
-import MyLib (firstRepeatBy)
-
-import Data.Array.IArray
-
 import Control.Monad (foldM)
-
-import Data.List (unfoldr, find)
-
+import Data.Either (rights)
 import Data.Function (on)
-
+import Data.IntSet qualified as IS
+import Data.List (find, unfoldr)
 import Data.Maybe (isNothing)
+import Data.Vector qualified as V
+import Paths_AOC2020
 
 data Instruction a
   = Acc a
   | Jmp a
   | Nop a
-  deriving (Show, Eq, Ord)
-
-data Machine = M {_acc :: Int, _ins :: Array Int (Instruction Int), _n :: Int}
   deriving (Show, Eq, Ord)
 
 insParser :: String -> Instruction Int
@@ -31,36 +23,36 @@ insParser s = case words s of
   where
     f = read @Int . filter (/= '+')
 
-run :: Machine -> Maybe Machine
-run (M acc ins n)
-  | n < lowerB || n > upperB = Nothing
-  | otherwise = Just $ case ins ! n of
-    Acc x -> M (acc + x) ins (n + 1)
-    Jmp x -> M acc ins (n + x)
-    Nop x -> M acc ins (n + 1)
+run :: V.Vector (Instruction Int) -> Either Int Int
+run v = go IS.empty 0 0
   where
-    (lowerB, upperB) = bounds ins
+    go visited i acc
+      | i `IS.member` visited = Left acc
+    go visited i acc = case v V.!? i of
+      Nothing -> Right acc
+      Just (Acc a) -> go visited' (succ i) (acc + a)
+      Just (Jmp a) -> go visited' (i + a) acc
+      Just (Nop a) -> go visited' (succ i) acc
+      where
+        visited' = IS.insert i visited
 
-changeOne :: Array Int (Instruction Int) -> [Array Int (Instruction Int)]
-changeOne a = a'
+fix :: V.Vector (Instruction Int) -> [V.Vector (Instruction Int)]
+fix v = [v V.// [(i, f j)] | (i, j) <- V.toList (V.indexed v)]
   where
-    b = bounds a
-    l = assocs a
-    f = do
-      x <- l
-      case x of
-        (i, Nop y) -> return (i, Jmp y)
-        (i, Jmp y) -> return (i, Nop y)
-        y -> return y
-    a' = [a // [x] | x <- f]
+    f (Acc a) = Acc a
+    f (Jmp a) = Nop a
+    f (Nop a) = Jmp a
 
 day8 :: IO ()
 day8 = do
-  input <- zip [0..] . map insParser . lines <$> (getDataDir >>= readFile . (++ "/input/input8.txt"))
-  let initMachine = M 0 (array (0, length input - 1) input) 0
-      l = unfoldr (fmap (\x -> (x, x)) . run) initMachine
-      x = _acc . (l !!) . subtract 1 . fst <$> firstRepeatBy ((==) `on` _n) l
-      initMachines = map (\x -> initMachine {_ins = x}) $ changeOne $ _ins initMachine
-  putStrLn $ ("day8a: " ++) $ show x
-  putStrLn $ ("day8b: " ++) $ show $ fmap (_acc . last) $ find (isNothing . firstRepeatBy ((==) `on` _n)) $ map (unfoldr (fmap (\x -> (x, x)) . run)) initMachines
-  
+  input <- V.fromList . map insParser . lines <$> (getDataDir >>= readFile . (++ "/input/input8.txt"))
+  putStrLn
+    . ("day8a: " ++)
+    . show
+    $ run input
+  putStrLn
+    . ("day8b: " ++)
+    . show
+    . rights
+    . map run
+    $ fix input
