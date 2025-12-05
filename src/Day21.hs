@@ -53,21 +53,22 @@ reduceAllergen m
     (single, multiple) = Map.partition ((== 1) . Set.size) m
     multiple' = Map.map (Set.\\ (Set.unions $ Map.elems single)) multiple
 
-day21 :: IO ()
+day21 :: IO (String, String)
 day21 = do
   input <- map readFood . lines <$> (getDataDir >>= readFile . (++ "/input/input21.txt"))
   let allergens = foldr (\x acc -> Set.union acc (_allergen x))  Set.empty input
       x = reduceAllergen $ allergenMap input
       withAllergen = Set.unions $ Map.elems x
-  putStrLn
-    . ("day21a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     . sum
     . map (Set.size . (Set.\\ withAllergen) . _ingredient)
     $ input
-  putStrLn
-    . ("day21b: " ++)
-    . intercalate ","
+  let
+   !finalAnsb
+    = intercalate ","
     . map (Set.findMin . snd)
     . Map.assocs
     $ x
+  pure (finalAnsa, finalAnsb)

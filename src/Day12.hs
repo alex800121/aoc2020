@@ -1,8 +1,7 @@
 module Day12 where
 
-
-import Paths_AOC2020
 import Data.Bifunctor (bimap)
+import Paths_AOC2020
 
 import Data.Function (on)
 
@@ -45,14 +44,14 @@ inputParser (x : xs) =
     (read xs)
 
 forward2 :: Int -> Ferry2 -> Ferry2
-forward2 n ferry@(Ferry2 i d) = ferry {_index2 = bimap (+ (n * fst d)) (+ (n * snd d)) i}
+forward2 n ferry@(Ferry2 i d) = ferry{_index2 = bimap (+ (n * fst d)) (+ (n * snd d)) i}
 
 turn2 :: Side -> Int -> Ferry2 -> Ferry2
-turn2 s i ferry = ferry {_direction2 = iterate f (_direction2 ferry) !! i}
-  where
-    f = case s of
-      R -> \(x, y) -> (y, -x)
-      L -> \(x, y) -> (-y, x)
+turn2 s i ferry = ferry{_direction2 = iterate f (_direction2 ferry) !! i}
+ where
+  f = case s of
+    R -> \(x, y) -> (y, -x)
+    L -> \(x, y) -> (-y, x)
 
 move2 :: Direction -> Int -> Ferry2 -> Ferry2
 move2 d i ferry =
@@ -61,7 +60,7 @@ move2 d i ferry =
         South -> (0, -i)
         West -> (-i, 0)
         East -> (i, 0)
-   in ferry {_direction2 = bimap (+ fst d') (+ snd d') $ _direction2 ferry}
+   in ferry{_direction2 = bimap (+ fst d') (+ snd d') $ _direction2 ferry}
 
 readIns2 :: Ferry2 -> Instruction -> Ferry2
 readIns2 ferry ins = case ins of
@@ -76,7 +75,7 @@ move d i ferry =
         South -> (0, -i)
         West -> (-i, 0)
         East -> (i, 0)
-   in ferry {_index = bimap (+ fst d') (+ snd d') $ _index ferry}
+   in ferry{_index = bimap (+ fst d') (+ snd d') $ _index ferry}
 
 turn :: Side -> Int -> Ferry -> Ferry
 turn s i ferry =
@@ -92,9 +91,20 @@ readIns ferry ins = case ins of
   Forward i -> move (_direction ferry) i ferry
   Turn t i -> turn t i ferry
 
-day12 :: IO ()
+day12 :: IO (String, String)
 day12 = do
   -- input <- map inputParser . lines <$> readFile "input/test12.txt"
   input <- map inputParser . lines <$> (getDataDir >>= readFile . (++ "/input/input12.txt"))
-  putStrLn $ ("day12a: " ++) $ show $ uncurry ((+) `on` abs) $ _index $ foldl' readIns initFerry input
-  putStrLn $ ("day12b: " ++) $ show $ uncurry ((+) `on` abs) $ _index2 $ foldl' readIns2 initFerry2 input
+  let
+   !finalAnsa
+    = show
+    $ uncurry ((+) `on` abs)
+    $ _index
+    $ foldl' readIns initFerry input
+  let
+   !finalAnsb
+    = show
+    $ uncurry ((+) `on` abs)
+    $ _index2
+    $ foldl' readIns2 initFerry2 input
+  pure (finalAnsa, finalAnsb)

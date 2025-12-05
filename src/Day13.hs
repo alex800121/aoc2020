@@ -25,7 +25,7 @@ mergeBus (t1, s1) (t2, s2)
     (q, r) = (t2 - t1) `divMod` c
     d = lcm s1 s2
 
-day13 :: IO ()
+day13 :: IO (String, String)
 day13 = do
   a : b : _ <- lines <$> (getDataDir >>= readFile . (++ "/input/input13.txt"))
   let departureTime = read @Integer a
@@ -38,13 +38,14 @@ day13 = do
         fmap fst
           . foldM mergeBus (0, 1)
           $ map (mapFirst negate) bus
-  putStrLn
-    . ("day13a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     . uncurry (*)
     . minimumBy (compare `on` snd)
     $ map (\(_, b) -> (b, ((b - (departureTime `mod` b)) `mod` b))) bus
-  putStrLn
-    . ("day13b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     $ day13b
+  pure (finalAnsa, finalAnsb)

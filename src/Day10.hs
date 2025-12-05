@@ -1,12 +1,11 @@
 module Day10 where
 
-
+import Data.List (find, group, sort, unfoldr)
 import Paths_AOC2020
-import Data.List (group, sort, unfoldr, find)
 
 import Data.List.Split (divvy)
 
-day10 :: IO ()
+day10 :: IO (String, String)
 day10 = do
   -- input' <- sort . map (read @Int) . lines <$> readFile "input/test10.txt"
   input' <- sort . map (read @Int) . lines <$> (getDataDir >>= readFile . (++ "/input/input10.txt"))
@@ -22,5 +21,12 @@ day10 = do
                  in Just (c, (b, c, (i, d)))
             )
             ((-2, 0), (-1, 0), (0, 1))
-  putStrLn $ ("day10a: " ++) $ show day10a
-  putStrLn $ ("day10b: " ++) $ show $ fmap snd day10b
+  let
+   !finalAnsa
+    = show
+    $ day10a
+  let
+   !finalAnsb
+    = show
+    $ fmap snd day10b
+  pure (finalAnsa, finalAnsb)

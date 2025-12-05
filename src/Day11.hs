@@ -106,7 +106,7 @@ stablized = go 0
       where
         x' = f x
 
-day11 :: IO ()
+day11 :: IO (String, String)
 day11 = do
   input <- drawArray @UArray . lines <$> (getDataDir >>= readFile . (++ "/input/input11.txt"))
   let a = par b $ nearestA input
@@ -116,11 +116,12 @@ day11 = do
       -- ansB = run 5 b
       ansA = par ansB $ UV.length . UV.filter id . snd $ stablized (step 4 a) (UV.replicate l False)
       ansB = UV.length . UV.filter id . snd $ stablized (step 5 b) (UV.replicate l False)
-  putStrLn
-    . ("day11a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     $ ansA
-  putStrLn
-    . ("day11b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     $ ansB
+  pure (finalAnsa, finalAnsb)

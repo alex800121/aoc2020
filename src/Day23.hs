@@ -60,14 +60,15 @@ ans input limit n takeN = runST $ do
         (y' :) <$> f (x - 1) y'
   f takeN 1
 
-day23 :: IO ()
+day23 :: IO (String, String)
 day23 = do
-  putStrLn
-    . ("day23a: " ++)
-    . map intToDigit
+  let
+   !finalAnsa
+    = map intToDigit
     $ ans input 9 100 8
-  putStrLn
-    . ("day23b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     . product
     $ ans input 1000000 10000000 2
+  pure (finalAnsa, finalAnsb)

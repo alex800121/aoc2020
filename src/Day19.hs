@@ -60,7 +60,7 @@ buildTest m i = case m IM.!? i of
     let xs = map (foldl' (\acc x -> acc >> buildTest m x) (pure ())) l
      in void $ choice xs
 
-day19 :: IO ()
+day19 :: IO (String, String)
 day19 = do
   a : b : _ <- map lines . splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/input19.txt"))
   -- a : b : _ <- map lines . splitOn "\n\n" <$> readFile "input/test19.txt"
@@ -71,13 +71,14 @@ day19 = do
           . IM.insert 8 (Left [[42], [42, 8]])
           $ test
       test0' = buildTest test' 0
-  putStrLn
-    . ("day19a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     . length
     $ filter (any (null . snd) . readP_to_S test0) b
-  putStrLn
-    . ("day19b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     . length
     $ filter (any (null . snd) . readP_to_S test0') b
+  pure (finalAnsa, finalAnsb)

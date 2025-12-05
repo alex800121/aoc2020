@@ -2,30 +2,39 @@
 
 module Day17 where
 
-import Data.Array.IArray qualified as I
-import Data.Array.Unboxed qualified as U
--- import Data.Array.MArray qualified as M
--- import Data.Array.ST (STUArray)
-import Data.List (groupBy, sortBy)
-import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
-import MyLib (drawGraph, drawMap)
+import Control.Monad (replicateM_, when)
+import Control.Monad.ST.Strict (ST, runST)
+import Data.IntMultiSet qualified as IMS
+import Data.IntSet qualified as IS
+import Data.Map.Strict qualified as Map
+import Data.Vector.Unboxed qualified as V
+import Data.Vector.Unboxed.Mutable (STVector)
+import Data.Vector.Unboxed.Mutable qualified as MV
+import Data.Word (Word8)
+import MyLib (drawMap)
 import Paths_AOC2020
 
 type Index = (Int, Int, Int)
 
-type Cube = U.UArray Index Bool
-
 type HyperIndex = (Int, Int, Int, Int)
 
-type HyperCube = U.UArray HyperIndex Bool
+fac = 8 + n * 2
 
+fromHyperIndex (x, y, z, w) = x * fac ^ 3 + y * fac ^ 2 + z * fac + w
+
+fromIndex (x, y, z) = x * fac ^ 2 + y * fac + z
+
+nextIMS f n y here = IMS.foldOccur p IS.empty adj
+  where
+    here' = IS.mapMonotonic (+ f y) here
+    adj = IMS.unions $ map (\x -> IMS.fromSet $ IS.mapMonotonic (+ f x) here) n
+    p k n acc = if n == 3 || n == 2 && IS.member k here' then IS.insert k acc else acc
 
 adjacent :: [Index]
-adjacent = [(a, b, c) | a <- [-1 .. 1], b <- [-1 .. 1], c <- [-1 .. 1], (a, b, c) /= (0, 0, 0)]
+adjacent = [(a, b, c) | a <- [0 .. 2], b <- [0 .. 2], c <- [0 .. 2], (a, b, c) /= (1, 1, 1)]
 
 hyperAdjacent :: [HyperIndex]
-hyperAdjacent = [(a, b, c, d) | a <- [-1 .. 1], b <- [-1 .. 1], c <- [-1 .. 1], d <- [-1 .. 1], (a, b, c, d) /= (0, 0, 0, 0)]
+hyperAdjacent = [(a, b, c, d) | a <- [0 .. 2], b <- [0 .. 2], c <- [0 .. 2], d <- [0 .. 2], (a, b, c, d) /= (1, 1, 1, 1)]
 
 (+^) :: Index -> Index -> Index
 (a, b, c) +^ (d, e, f) = (a + d, b + e, c + f)
@@ -33,66 +42,49 @@ hyperAdjacent = [(a, b, c, d) | a <- [-1 .. 1], b <- [-1 .. 1], c <- [-1 .. 1], 
 (+^^) :: HyperIndex -> HyperIndex -> HyperIndex
 (a, b, c, x) +^^ (d, e, f, y) = (a + d, b + e, c + f, x + y)
 
-hyperStep :: HyperCube -> HyperCube
-hyperStep c = I.genArray b' f
-  where
-    b@((x0, y0, z0, w0), (x1, y1, z1, w1)) = U.bounds c
-    b' = ((x0 - 1, y0 - 1, z0 - 1, w0 - 1), (x1 + 1, y1 + 1, z1 + 1, w1 + 1))
-    f i = if fromMaybe False (c I.!? i) then l == 2 || l == 3 else l == 3
-      where
-        i' = map (+^^ i) hyperAdjacent
-        l = length $ filter (fromMaybe False . (c I.!?)) i'
-
-step :: Cube -> Cube
-step c = I.genArray b' f
-  where
-    b@((x0, y0, z0), (x1, y1, z1)) = U.bounds c
-    b' = ((x0 - 1, y0 - 1, z0 - 1), (x1 + 1, y1 + 1, z1 + 1))
-    f i = if fromMaybe False (c I.!? i) then l == 2 || l == 3 else l == 3
-      where
-        i' = map (+^ i) adjacent
-        l = length $ filter (fromMaybe False . (c I.!?)) i'
-
-printCube :: Cube -> [String]
-printCube =
-  map
-    ( unlines
-        . drawGraph (\case Nothing -> ' '; Just True -> '#'; Just False -> '.')
-        . Map.fromList
-        . map (\((x, y, _), e) -> ((x, y), e))
+hyperStep :: (a -> Int) -> [a] -> a -> STVector s Word8 -> STVector s Bool -> STVector s Bool -> ST s ()
+hyperStep f adj z count c' d' = do
+  MV.set count 0
+  MV.set c' False
+  MV.imapM_
+    ( \i a ->
+        when a (mapM_ (\j -> MV.modify count (+ 1) (f j + i)) adj >> MV.write c' (f z + i) True)
     )
-    . groupBy (\((_, _, z), _) ((_, _, c), _) -> z == c)
-    . sortBy (\((_, _, z), _) ((_, _, c), _) -> compare z c)
-    . U.assocs
+    d'
+  MV.set d' False
+  MV.imapM_
+    ( \i n -> do
+        x <- MV.read c' i
+        when (n == 3 || n == 2 && x) (MV.write d' i True)
+    )
+    count
+  where
+    l = MV.length c'
 
-day17 :: IO ()
+n = 6
+
+day17a m l f xs z = runST $ do
+  d' <- MV.generate l (`IS.member` m)
+  c' <- MV.new l
+  count <- MV.new l
+  replicateM_ n (hyperStep f xs z count c' d')
+  MV.foldl' (\acc x -> if x then acc + 1 else acc) 0 d'
+
+day17 :: IO (String, String)
 day17 = do
-  -- input <- lines <$> readFile "input/test17.txt"
   input <- lines <$> (getDataDir >>= readFile . (++ "/input/input17.txt"))
-  let initMap =
-        map (\((x, y), e) -> ((x, y, 0), e))
-          . Map.toList
-          $ drawMap (\case '#' -> Just True; '.' -> Just False; _ -> Nothing) input
-      b@((x0, y0, z0), (x1, y1, z1)) = (,) <$> minimum <*> maximum $ map fst initMap
-      initArray = U.array b initMap :: Cube
-      initHyperArray =
-        U.array
-          ((x0, y0, z0, 0), (x1, y1, z1, 0))
-          (map (\((x, y, z), e) -> ((x, y, z, 0), e)) initMap) ::
-          HyperCube
-  putStrLn
-    . ("day17a: " ++)
-    . show
-    . length
-    . filter id
-    . U.elems
-    . (!! 6)
-    $ iterate step initArray
-  putStrLn
-    . ("day17b: " ++)
-    . show
-    . length
-    . filter id
-    . U.elems
-    . (!! 6)
-    $ iterate hyperStep initHyperArray
+  let initM =
+        IS.fromList
+          . map (\(x, y) -> fromIndex (x, y, 0))
+          . Map.keys
+          $ drawMap (\case '#' -> Just (); _ -> Nothing) input
+      initHyperM = IS.map (* fac) initM
+  let
+   !finalAnsa
+    = show
+    $ day17a initM (fac ^ 3) fromIndex adjacent (1, 1, 1)
+  let
+   !finalAnsb
+    = show
+    $ day17a initHyperM (fac ^ 4) fromHyperIndex hyperAdjacent (1, 1, 1, 1)
+  pure (finalAnsa, finalAnsb)

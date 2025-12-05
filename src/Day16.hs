@@ -60,7 +60,7 @@ calcValidFields i ((name, ranges) : fr') = do
   let xs = delete x i
   ((name, head x) :) <$> calcValidFields xs fr'
 
-day16 :: IO ()
+day16 :: IO (String, String)
 day16 = do
   -- (fr, t, ts) <- inputParser <$> readFile "input/test16.txt"
   (fr, t, ts) <- inputParser <$> (getDataDir >>= readFile . (++ "/input/input16.txt"))
@@ -77,17 +77,18 @@ day16 = do
           )
           . transpose
           $ t : filter (all (validField fr)) ts
-  putStrLn
-    . ("day16a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     . sum
     . filter (not . validField fr)
     $ concat ts
-  putStrLn
-    . ("day16a: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     . product
     . map snd
     . filter (isPrefixOf "departure" . fst)
     . head
     $ calcValidFields ts' fr
+  pure (finalAnsa, finalAnsb)

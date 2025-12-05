@@ -50,16 +50,17 @@ op :: (Num a) => Op -> a -> a -> a
 op Add = (+)
 op Mul = (*)
 
-day18 :: IO ()
+day18 :: IO (String, String)
 day18 = do
   input <- lines <$> (getDataDir >>= readFile . (++ "/input/input18.txt"))
   let input1 = traverse (parseMaybe expr) input
       input2 = traverse (parseMaybe expr2) input
-  putStrLn
-    . ("day18a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     $ fmap (sum . fmap calcTree) input1
-  putStrLn
-    . ("day18b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     $ fmap (sum . fmap calcTree) input2
+  pure (finalAnsa, finalAnsb)

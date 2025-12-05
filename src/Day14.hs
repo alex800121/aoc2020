@@ -86,21 +86,22 @@ readIns2 :: Machine -> Instruction -> Machine
 readIns2 (m, n) (Mem i j) = (m, foldl' (\acc x -> Map.insert x j acc) n $ decodeAddr i m)
 readIns2 (m, n) (Mask i) = (i, n)
 
-day14 :: IO ()
+day14 :: IO (String, String)
 day14 = do
   -- input <- mapMaybe (parseMaybe parser) . lines <$> readFile "input/test14.txt"
   input <- mapMaybe (parseMaybe parser) . lines <$> (getDataDir >>= readFile . (++ "/input/input14.txt"))
-  putStrLn
-    . ("day14a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     . sum
     . Map.elems
     . snd
     $ foldl' readIns ([], Map.empty) input
-  putStrLn
-    . ("day14b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     . sum
     . Map.elems
     . snd
     $ foldl' readIns2 ([], Map.empty) input
+  pure (finalAnsa, finalAnsb)

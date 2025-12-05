@@ -42,18 +42,19 @@ day22b level cache g@(lhs, rhs) = case (viewl lhs, viewl rhs) of
     rHigh = maximum rhs
     len = length lhs + length rhs
 
-day22 :: IO ()
+day22 :: IO (String, String)
 day22 = do
   input <-
     (\(x : y : _) -> (x, y))
       . map (Seq.fromList . map (read @Int) . tail . lines)
       . splitOn "\n\n"
       <$> (getDataDir >>= readFile . (++ "/input/input22.txt"))
-  putStrLn
-    . ("day22a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     $ day22a input
-  putStrLn
-    . ("day22b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     $ day22b 0 Set.empty input
+  pure (finalAnsa, finalAnsb)

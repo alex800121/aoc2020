@@ -1,12 +1,11 @@
 module Day25 where
 
-
-import Paths_AOC2020
 import Data.List (elemIndex, find, findIndex)
+import Paths_AOC2020
 
 import Data.Map (Map)
 
-import qualified Data.Map as Map
+import Data.Map qualified as Map
 
 import Debug.Trace (traceShow)
 
@@ -28,7 +27,14 @@ h i n subject
   | i <= 0 = n
   | otherwise = h (i - 1) (f n subject d) subject
 
-day25 :: IO ()
+day25 :: IO (String, String)
 day25 = do
-  let door = g 0 1 doorPub subject 
-  putStrLn . ("day25a: " ++) . show $ h door 1 cardPub
+  let door = g 0 1 doorPub subject
+  let
+    !finalAnsa =
+      show $
+        h door 1 cardPub
+  let
+    !finalAnsb =
+      "Merry Christmas!!!"
+  pure (finalAnsa, finalAnsb)

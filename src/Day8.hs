@@ -43,16 +43,17 @@ fix v = [v V.// [(i, f j)] | (i, j) <- V.toList (V.indexed v)]
     f (Jmp a) = Nop a
     f (Nop a) = Jmp a
 
-day8 :: IO ()
+day8 :: IO (String, String)
 day8 = do
   input <- V.fromList . map insParser . lines <$> (getDataDir >>= readFile . (++ "/input/input8.txt"))
-  putStrLn
-    . ("day8a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     $ run input
-  putStrLn
-    . ("day8b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     . rights
     . map run
     $ fix input
+  pure (finalAnsa, finalAnsb)

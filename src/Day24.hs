@@ -89,7 +89,7 @@ run' xs i = runST $ do
     xs' = IS.fromList $ map (toInt . bimap (+ (i + minx)) (+ (i + miny))) xs
     iadjacent = map toInt adjacent
 
-day24 :: IO ()
+day24 :: IO (String, String)
 day24 = do
   input <-
     MS.foldOccur (\x o acc -> if odd o then x : acc else acc) []
@@ -97,12 +97,13 @@ day24 = do
       . map (parseDirection (0, 0))
       . lines
       <$> (getDataDir >>= readFile . (++ "/input/input24.txt"))
-  putStrLn
-    . ("day24a: " ++)
-    . show
+  let
+   !finalAnsa
+    = show
     . length
     $ input
-  putStrLn
-    . ("day24b: " ++)
-    . show
+  let
+   !finalAnsb
+    = show
     $ run' input 100
+  pure (finalAnsa, finalAnsb)

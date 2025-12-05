@@ -1,8 +1,7 @@
 module Day4 where
 
-
-import Paths_AOC2020
 import Data.List ((\\))
+import Paths_AOC2020
 
 import Data.List.Split (splitOn)
 
@@ -16,19 +15,19 @@ import Text.Megaparsec.Char (char, digitChar, eol, hexDigitChar, string)
 
 requiredFields :: [String]
 requiredFields =
-  [ "byr",
-    "iyr",
-    "eyr",
-    "hgt",
-    "hcl",
-    "ecl",
-    "pid"
+  [ "byr"
+  , "iyr"
+  , "eyr"
+  , "hgt"
+  , "hcl"
+  , "ecl"
+  , "pid"
   ]
 
 valid :: [String] -> Bool
 valid = (&&) <$> (null . (requiredFields \\) . map (take 3)) <*> all (f (choice [byr, iyr, eyr, hgt, hcl, ecl, pid, cid]))
-  where
-    f x = fromMaybe False . parseMaybe x
+ where
+  f x = fromMaybe False . parseMaybe x
 
 byr, iyr, eyr, hgt, hcl, ecl, pid, cid :: Parser Bool
 byr = do
@@ -63,9 +62,18 @@ pid = do
 cid = do
   string "cid" >> takeRest >> return True
 
-day4 :: IO ()
+day4 :: IO (String, String)
 day4 = do
   input <- map words . splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/input4.txt"))
   let fields = map (map (takeWhile (/= ':'))) input
-  putStrLn $ ("day4a: " ++) $ show $ length $ filter (null . (requiredFields \\)) fields
-  putStrLn $ ("day4b: " ++) $ show $ length $ filter valid input
+  let
+   !finalAnsa
+    = show
+    $ length
+    $ filter (null . (requiredFields \\)) fields
+  let
+   !finalAnsb
+    = show
+    $ length
+    $ filter valid input
+  pure (finalAnsa, finalAnsb)

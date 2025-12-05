@@ -1,13 +1,20 @@
 module Day5 where
 
-import Paths_AOC2020
 import Data.List (foldl', sort, (\\))
+import Paths_AOC2020
 
-day5 :: IO ()
+day5 :: IO (String, String)
 day5 = do
   input <- lines <$> (getDataDir >>= readFile . (++ "/input/input5.txt"))
   let seatIDs = sort $ map (foldl' (\acc x -> acc * 2 + if x `elem` "FL" then 0 else 1) 0) input
       b = maximum seatIDs
       a = minimum seatIDs
-  putStrLn $ ("day5a: " ++) $ show $ maximum seatIDs
-  putStrLn $ ("day5b: " ++) $ show $ [a .. b] \\ seatIDs
+  let
+   !finalAnsa
+    = show
+    $ maximum seatIDs
+  let
+   !finalAnsb
+    = show
+    $ [a .. b] \\ seatIDs
+  pure (finalAnsa, finalAnsb)
